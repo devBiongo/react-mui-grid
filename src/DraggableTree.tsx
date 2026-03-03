@@ -45,6 +45,8 @@ interface SortableTreeItemProps {
   onToggle: (id: string) => void;
   expanded: Set<string>;
   onItemClick?: (node: TreeNode) => void;
+  selectedNodeId: string | null;
+  onSelect: (id: string) => void;
 }
 
 function SortableTreeItem({
@@ -53,6 +55,8 @@ function SortableTreeItem({
   onToggle,
   expanded,
   onItemClick,
+  selectedNodeId,
+  onSelect,
 }: SortableTreeItemProps) {
   const {
     attributes,
@@ -72,6 +76,7 @@ function SortableTreeItem({
   const isExpanded = expanded.has(node.id);
   const hasChildren = node.children && node.children.length > 0;
   const isLeaf = !hasChildren;
+  const isSelected = selectedNodeId === node.id;
 
   return (
     <Box ref={setNodeRef} style={style}>
@@ -82,10 +87,19 @@ function SortableTreeItem({
         {...listeners}
       >
         <ListItemButton
-          sx={{ borderRadius: 2, py: 0.5, minHeight: 36 }}
+          sx={{
+            borderRadius: 2,
+            py: 0.5,
+            minHeight: 36,
+            bgcolor: isSelected ? "action.selected" : "transparent",
+            "&:hover": {
+              bgcolor: isSelected ? "action.selected" : "action.hover",
+            },
+          }}
           onClick={(e) => {
             e.stopPropagation();
             onToggle(node.id);
+            onSelect(node.id);
             onItemClick?.(node);
           }}
         >
@@ -123,6 +137,8 @@ function SortableTreeItem({
             onToggle={onToggle}
             expanded={expanded}
             onItemClick={onItemClick}
+            selectedNodeId={selectedNodeId}
+            onSelect={onSelect}
           />
         </Collapse>
       )}
@@ -136,6 +152,8 @@ interface TreeLevelProps {
   onToggle: (id: string) => void;
   expanded: Set<string>;
   onItemClick?: (node: TreeNode) => void;
+  selectedNodeId: string | null;
+  onSelect: (id: string) => void;
 }
 
 function TreeLevel({
@@ -144,6 +162,8 @@ function TreeLevel({
   onToggle,
   expanded,
   onItemClick,
+  selectedNodeId,
+  onSelect,
 }: TreeLevelProps) {
   return (
     <SortableContext
@@ -159,6 +179,8 @@ function TreeLevel({
             onToggle={onToggle}
             expanded={expanded}
             onItemClick={onItemClick}
+            selectedNodeId={selectedNodeId}
+            onSelect={onSelect}
           />
         ))}
       </List>
@@ -175,6 +197,9 @@ interface DraggableTreeProps {
 export interface DraggableTreeRef {
   expandAll: () => void;
   collapseAll: () => void;
+  moveUp: () => void;
+  moveDown: () => void;
+  getSelectedNode: () => TreeNode | null;
 }
 
 export const DraggableTree = forwardRef<DraggableTreeRef, DraggableTreeProps>(
@@ -182,6 +207,7 @@ export const DraggableTree = forwardRef<DraggableTreeRef, DraggableTreeProps>(
     const [treeData, setTreeData] = useState<TreeNode[]>(data);
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
     const sensors = useSensors(
       useSensor(PointerSensor, {
@@ -206,6 +232,67 @@ export const DraggableTree = forwardRef<DraggableTreeRef, DraggableTreeProps>(
       return ids;
     };
 
+    // Find node and its parent array
+    const findNodeLocation = (
+      nodes: TreeNode[],
+      targetId: string,
+      parent: TreeNode[] | null = null,
+    ): { node: TreeNode; parent: TreeNode[]; index: number } | null => {
+      for (let i = 0; i < nodes.length; i++) {
+        if (nodes[i].id === targetId) {
+          return { node: nodes[i], parent: parent || nodes, index: i };
+        }
+        if (nodes[i].children) {
+          const result = findNodeLocation(
+            nodes[i].children!,
+            targetId,
+            nodes[i].children!,
+          );
+          if (result) return result;
+        }
+      }
+      return null;
+    };
+
+    // Move node up in its parent array
+    const moveNodeUp = () => {
+      if (!selectedNodeId) return;
+
+      const newTree = JSON.parse(JSON.stringify(treeData)) as TreeNode[];
+      const location = findNodeLocation(newTree, selectedNodeId);
+
+      if (!location || location.index === 0) return; // Already at top
+
+      const { parent, index } = location;
+      [parent[index - 1], parent[index]] = [parent[index], parent[index - 1]];
+
+      setTreeData(newTree);
+      onChange?.(newTree);
+    };
+
+    // Move node down in its parent array
+    const moveNodeDown = () => {
+      if (!selectedNodeId) return;
+
+      const newTree = JSON.parse(JSON.stringify(treeData)) as TreeNode[];
+      const location = findNodeLocation(newTree, selectedNodeId);
+
+      if (!location || location.index === location.parent.length - 1) return; // Already at bottom
+
+      const { parent, index } = location;
+      [parent[index], parent[index + 1]] = [parent[index + 1], parent[index]];
+
+      setTreeData(newTree);
+      onChange?.(newTree);
+    };
+
+    // Get selected node
+    const getSelectedNode = (): TreeNode | null => {
+      if (!selectedNodeId) return null;
+      const location = findNodeLocation(treeData, selectedNodeId);
+      return location ? location.node : null;
+    };
+
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
       expandAll: () => {
@@ -215,6 +302,9 @@ export const DraggableTree = forwardRef<DraggableTreeRef, DraggableTreeProps>(
       collapseAll: () => {
         setExpanded(new Set());
       },
+      moveUp: moveNodeUp,
+      moveDown: moveNodeDown,
+      getSelectedNode,
     }));
 
     const handleToggle = (id: string) => {
@@ -304,6 +394,8 @@ export const DraggableTree = forwardRef<DraggableTreeRef, DraggableTreeProps>(
             onToggle={handleToggle}
             expanded={expanded}
             onItemClick={onItemClick}
+            selectedNodeId={selectedNodeId}
+            onSelect={setSelectedNodeId}
           />
 
           <DragOverlay>

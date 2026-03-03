@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { Box, Paper, Typography, Divider } from "@mui/material";
+import { useState, useRef } from "react";
+import { Box, Paper, Typography, Divider, Button } from "@mui/material";
 import {
   DraggableTree,
   type TreeNode,
   type DraggableTreeRef,
 } from "./DraggableTree";
 import { DataGrid } from "./DataGrid";
-import { useRef } from "react";
 
 const treeData: TreeNode[] = [
   {
@@ -54,19 +53,13 @@ const treeData: TreeNode[] = [
 export function ThreeColumnLayout() {
   const treeRef = useRef<DraggableTreeRef>(null);
   const [selectedRow, setSelectedRow] = useState<any>(null);
-  const [selectedTreeNode, setSelectedTreeNode] = useState<TreeNode | null>(
-    null,
-  );
 
   // PDF示例URL（可以替换为实际的PDF文件）
   const pdfUrl = selectedRow
     ? `https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf#page=1`
     : null;
 
-  const handleTreeItemClick = (node: TreeNode) => {
-    setSelectedTreeNode(node);
-    console.log("Tree node selected:", node);
-  };
+  const handleTreeItemClick = (node: TreeNode) => {};
 
   const handleRowSelection = (row: any) => {
     setSelectedRow(row);
@@ -98,8 +91,28 @@ export function ThreeColumnLayout() {
           <Typography variant="h6">フォルダツリー</Typography>
         </Box>
         <Divider />
+        <Box sx={{ p: 2, display: "flex", gap: 1 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            fullWidth
+            onClick={() => treeRef.current?.moveUp()}
+          >
+            上移
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            fullWidth
+            onClick={() => treeRef.current?.moveDown()}
+          >
+            下移
+          </Button>
+        </Box>
+        <Divider />
         <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
           <DraggableTree
+            onChange={(data) => console.log(data)}
             ref={treeRef}
             data={treeData}
             onItemClick={handleTreeItemClick}

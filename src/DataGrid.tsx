@@ -71,7 +71,7 @@ interface DataGridProps {
 }
 
 export function DataGrid({ onRowSelected }: DataGridProps) {
-  const [rowData, setRowData] = useState<RowData[]>([
+  const [rowData] = useState<RowData[]>([
     {
       id: 1,
       title: "プロジェクト提案書",
@@ -201,7 +201,6 @@ export function DataGrid({ onRowSelected }: DataGridProps) {
 
   const onCellValueChanged = (event: any) => {
     console.log("Cell value changed:", event.data);
-    // 这里可以添加保存到后端的逻辑
   };
 
   const onRowClicked = (event: any) => {
@@ -211,33 +210,6 @@ export function DataGrid({ onRowSelected }: DataGridProps) {
 
   return (
     <Box sx={{ width: "100%", height: "600px" }}>
-      <style>
-        {`
-          .ag-theme-quartz {
-            --ag-header-background-color: #1976d2;
-            --ag-header-foreground-color: white;
-            --ag-odd-row-background-color: #f5f5f5;
-            --ag-row-hover-color: #e3f2fd;
-            --ag-selected-row-background-color: #bbdefb;
-            --ag-border-color: #e0e0e0;
-            --ag-font-size: 14px;
-            --ag-header-height: 50px;
-            --ag-row-height: 60px;
-          }
-          .ag-theme-quartz .ag-header-cell {
-            font-weight: 600;
-          }
-          .ag-theme-quartz .ag-paging-panel {
-            border-top: 2px solid #1976d2;
-            background-color: #fafafa;
-            padding: 12px 20px;
-            font-size: 14px;
-          }
-          .ag-theme-quartz .ag-paging-button {
-            margin: 0 4px;
-          }
-        `}
-      </style>
       <div
         className="ag-theme-quartz"
         style={{
@@ -261,7 +233,8 @@ export function DataGrid({ onRowSelected }: DataGridProps) {
           paginationAutoPageSize={false}
           onCellValueChanged={onCellValueChanged}
           onRowClicked={onRowClicked}
-          rowSelection="single"
+          rowSelection={{ mode: "singleRow" }}
+          theme="legacy"
         />
       </div>
     </Box>

@@ -100,9 +100,23 @@ export function App() {
         </Typography>
       </Box>
 
-      <Box mb={2}>
+      <Box mb={2} display="flex" gap={1}>
         <Button variant="outlined" size="small" onClick={handleToggleExpand}>
           {isExpanded ? "全部折叠" : "全部展开"}
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => treeRef.current?.moveUp()}
+        >
+          上移
+        </Button>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => treeRef.current?.moveDown()}
+        >
+          下移
         </Button>
       </Box>
 
